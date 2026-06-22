@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Smart Expense Splitter</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C97E;
+      --gold-dim: rgba(201,168,76,0.13);
+      --dark: #0D0D0F;
+      --surface: #141417;
+      --card: #1A1A1F;
+      --card2: #1F1F26;
+      --border: rgba(201,168,76,0.18);
+      --text: #F0EDE6;
+      --muted: #8A8785;
+      --danger: #C0392B;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -30%; left: -10%;
+      width: 60vw; height: 60vw;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%; right: -10%;
+      width: 50vw; height: 50vw;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 60px 0 50px;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid var(--border);
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      background: var(--gold-dim);
+    }
+    .hero h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(40px, 6vw, 66px);
+      font-weight: 300;
+      line-height: 1.1;
+      color: var(--text);
+      letter-spacing: -1px;
+    }
+    .hero h1 em {
+      color: var(--gold);
+      font-style: italic;
+    }
+    .hero p {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+      opacity: 0.35;
+    }
+    .card:hover { border-color: rgba(201,168,76,0.32); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .card-icon {
+      width: 44px; height: 44px;
+      background: var(--gold-dim);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 23px; font-weight: 600;
+      color: var(--text);
+    }
+    .card-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .input-row {
+      display: flex; gap: 10px; margin-bottom: 20px; align-items: stretch;
+    }
+
+    input[type="text"], input[type="number"], select {
+      flex: 1;
+      background: var(--card2);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--text);
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      -webkit-appearance: none;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus, select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+    }
+    select option { background: #1F1F26; color: var(--text); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 13px 22px;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.22s;
+      white-space: nowrap; letter-spacing: 0.2px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold), #A87C2A);
+      color: #0D0D0F;
+      box-shadow: 0 4px 20px rgba(201,168,76,0.25);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 7px 28px rgba(201,168,76,0.38); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .btn-danger {
+      background: rgba(192,57,43,0.12); color: #E74C3C;
+      border: 1px solid rgba(192,57,43,0.22);
+    }
+    .btn-danger:hover { background: rgba(192,57,43,0.22); }
+
+    .user-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .user-tag {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 100px; padding: 6px 15px;
+      font-size: 13px; color: var(--text);
+      animation: tagIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .user-tag .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold); flex-shrink: 0;
+    }
+    @keyframes tagIn {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .label {
+      font-size: 11px; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 12px; font-weight: 500;
+    }
+
+    /* ── Split mode tabs ── */
+    .split-tabs {
+      display: flex; gap: 6px; margin-bottom: 18px;
+      background: var(--card2); border-radius: 12px; padding: 5px;
+    }
+    .split-tab {
+      flex: 1; padding: 8px 6px; border: none; border-radius: 9px;
+      background: transparent; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; letter-spacing: 0.2px;
+    }
+    .split-tab.active {
+      background: var(--gold-dim); color: var(--gold-light);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Equal split checkboxes ── */
+    .split-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 10px;
+    }
+    .split-item { position: relative; }
+    .split-item input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .split-item label {
+      display: flex; align-items: center; gap: 9px;
+      background: var(--card2); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 11px 14px;
+      font-size: 13px; color: var(--muted);
+      cursor: pointer; transition: all 0.2s; user-select: none;
+    }
+    .split-item label::before {
+      content: '';
+      width: 16px; height: 16px; border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.15);
+      flex-shrink: 0; transition: all 0.2s;
+    }
+    .split-item input:checked + label {
+      background: var(--gold-dim); border-color: var(--gold); color: var(--gold-light);
+    }
+    .split-item input:checked + label::before {
+      background: var(--gold); border-color: var(--gold);
+      box-shadow: 0 0 8px rgba(201,168,76,0.5);
+    }
+
+    /* ── Shares / Percentage rows ── */
+    .share-list { display: flex; flex-direction: column; gap: 8px; }
+    .share-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--card2); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 10px 14px;
+      transition: border-color 0.2s;
+    }
+    .share-row.included { border-color: var(--gold); background: var(--gold-dim); }
+    .share-toggle {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      background: transparent; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; transition: all 0.2s; font-size: 11px; color: transparent;
+    }
+    .share-row.included .share-toggle {
+      background: var(--gold); border-color: var(--gold); color: var(--dark); font-size: 12px;
+    }
+    .share-name { flex: 1; font-size: 13px; color: var(--muted); }
+    .share-row.included .share-name { color: var(--gold-light); }
+    .share-amount { font-size: 12px; color: var(--muted); min-width: 58px; text-align: right; }
+    .share-row.included .share-amount { color: var(--gold); }
+    .stepper { display: flex; align-items: center; gap: 6px; }
+    .step-btn {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04); color: var(--text);
+      font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; line-height: 1; padding-bottom: 1px;
+    }
+    .step-btn:hover { background: rgba(201,168,76,0.18); border-color: var(--gold); color: var(--gold); }
+    .step-val { min-width: 26px; text-align: center; font-size: 14px; font-weight: 500; color: var(--text); }
+    .pct-input {
+      width: 62px; padding: 5px 8px; text-align: center;
+      font-size: 13px; border-radius: 8px;
+    }
+    .split-summary {
+      margin-top: 12px; font-size: 12px; color: var(--muted);
+      text-align: right; letter-spacing: 0.3px;
+    }
+    .split-summary span { color: var(--gold); font-weight: 500; }
+
+    hr.divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 24px 0; }
+
+    .settlement-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--card2); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 14px; padding: 16px 20px; margin-bottom: 10px;
+      animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .s-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .s-arrow { color: var(--gold); font-size: 18px; flex: 1; text-align: center; opacity: 0.8; }
+    .s-amount {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 21px; font-weight: 600; color: var(--gold);
+      margin-left: auto;
+    }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), #7A5A20);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; color: var(--dark); flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center; padding: 28px 16px; color: var(--muted); font-size: 14px;
+    }
+    .empty-state .ei { font-size: 34px; margin-bottom: 10px; opacity: 0.4; }
+
+    #toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 100px; padding: 12px 24px;
+      font-size: 13px; color: var(--gold-light);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      z-index: 999; pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    .footer {
+      text-align: center; padding-top: 40px;
+      color: var(--muted); font-size: 12px;
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+
+    @media (max-width: 600px) {
+      .input-row { flex-direction: column; }
+      .split-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+<div id="toast"></div>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="hero-badge">✦ Expense Management</div>
+    <h1>Smart<br><em>Expense Splitter</em></h1>
+    <p>Split bills effortlessly. Settle debts intelligently.</p>
+  </div>
+
+  <!-- MEMBERS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">👤</div>
+      <div>
+        <div class="card-title">Members</div>
+        <div class="card-subtitle">Add people to split expenses with</div>
+      </div>
+    </div>
+    <div class="input-row">
+      <input id="userName" type="text" placeholder="Enter member name…" autocomplete="off">
+      <button class="btn btn-primary" id="addUserBtn">＋ Add</button>
+      <button class="btn btn-danger" onclick="resetApp()">↺ Reset</button>
+    </div>
+    <div class="label">Active Members</div>
+    <div id="userList" class="user-tags">
+      <div class="empty-state" id="emptyUsers" style="width:100%;padding:10px 0 4px;">
+        <div class="ei">🌿</div>
+        <div>No members yet — add someone above</div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- EXPENSE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">💳</div>
+      <div>
+        <div class="card-title">Add Expense</div>
+        <div class="card-subtitle">Log who paid and how to split</div>
+      </div>
+    </div>
+    <div class="input-row">
+      <input id="expenseAmount" type="number" placeholder="Amount (₹)" min="1" oninput="refreshSplitView()">
+      <input id="paidBySearch" type="text" placeholder="Search payer..." autocomplete="off">
+      <div id="paidByOptions" class="user-tags"></div>
+    </div>
+    <hr class="divider">
+    <div class="label">Split Method</div>
+    <div class="split-tabs">
+      <button class="split-tab active" onclick="setSplitMode('equal', this)">⚖ Equal</button>
+      <button class="split-tab" onclick="setSplitMode('shares', this)">◑ By Shares</button>
+      <button class="split-tab" onclick="setSplitMode('percent', this)">% By Percent</button>
+    </div>
+
+    <!-- Equal mode -->
+    <div id="mode-equal">
+      <div class="label">Split Among</div>
+      <div id="splitUsers" class="split-grid"></div>
+    </div>
+
+    <!-- Shares mode -->
+    <div id="mode-shares" style="display:none;">
+      <div class="label">Assign Shares</div>
+      <div id="shareList" class="share-list"></div>
+      <div class="split-summary" id="sharesSummary">Total shares: <span>0</span></div>
+    </div>
+
+    <!-- Percent mode -->
+    <div id="mode-percent" style="display:none;">
+      <div class="label">Assign Percentages</div>
+      <div id="percentList" class="share-list"></div>
+      <div class="split-summary" id="percentSummary">Total: <span>0%</span></div>
+    </div>
+
+    <div style="margin-top:24px;">
+      <button class="btn btn-primary" id="addExpenseBtn" style="width:100%;padding:15px;font-size:15px;">
+        ✦ &nbsp;Record Expense
+      </button>
+    </div>
+  </div>
+
+  <!-- SETTLEMENT -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">⚡</div>
+      <div>
+        <div class="card-title">Settlement Plan</div>
+        <div class="card-subtitle">Optimized transactions to clear all debts</div>
+      </div>
+    </div>
+    <div id="settlementList">
+      <div class="empty-state">
+        <div class="ei">✨</div>
+        <div>Add an expense to see the settlement plan</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">✦ &nbsp; Smart Expense Splitter &nbsp; ✦</div>
+</div>
+
+<script>
+  let users = [];
+  let splitMode = 'equal'; // 'equal' | 'shares' | 'percent'
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function initial(name) { return name.charAt(0).toUpperCase(); }
+
+// ── Split mode switch ──────────────────────────────────────────
+function setSplitMode(mode, btn) {
+  splitMode = mode;
+  document.querySelectorAll('.split-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mode-equal').style.display   = mode === 'equal'   ? '' : 'none';
+  document.getElementById('mode-shares').style.display  = mode === 'shares'  ? '' : 'none';
+  document.getElementById('mode-percent').style.display = mode === 'percent' ? '' : 'none';
+  refreshSplitView();
+}
+
+// ── Build share/percent rows for a user ───────────────────────
+function makeShareRow(name, mode) {
+  const row = document.createElement('div');
+  row.className = 'share-row included';
+  row.dataset.name = name;
+  row.dataset.included = '1';
+
+  if (mode === 'shares') {
+    row.dataset.shares = '1';
+    row.innerHTML = `
+      <div class="share-toggle" onclick="toggleShareRow(this)">✓</div>
+      <span class="share-name">${name}</span>
+      <span class="share-amount" id="sa_${CSS.escape(name)}">—</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="changeShares('${name}',-1)">−</button>
+        <span class="step-val" id="sv_${CSS.escape(name)}">1</span>
+        <button class="step-btn" onclick="changeShares('${name}',+1)">+</button>
+      </div>`;
+  } else {
+    row.dataset.pct = '0';
+    row.innerHTML = `
+      <div class="share-toggle" onclick="toggleShareRow(this)">✓</div>
+      <span class="share-name">${name}</span>
+      <span class="share-amount" id="pa_${CSS.escape(name)}">—</span>
+      <input class="pct-input" type="number" min="0" max="100" value="0"
+             oninput="onPctChange('${name}', this.value)"
+             id="pv_${CSS.escape(name)}">
+      <span style="color:var(--muted);font-size:13px;">%</span>`;
+  }
+  return row;
+}
+
+function toggleShareRow(btn) {
+  const row = btn.closest('.share-row');
+  const included = row.dataset.included === '1';
+  row.dataset.included = included ? '0' : '1';
+  if (included) {
+    row.classList.remove('included');
+    btn.textContent = '';
+    if (row.dataset.shares !== undefined) row.dataset.shares = '0';
+    else {
+      const name = row.dataset.name;
+      const inp = document.getElementById('pv_' + CSS.escape(name));
+      if (inp) { inp.value = 0; row.dataset.pct = '0'; }
+    }
+  } else {
+    row.classList.add('included');
+    btn.textContent = '✓';
+    if (row.dataset.shares !== undefined && row.dataset.shares === '0') {
+      row.dataset.shares = '1';
+      const name = row.dataset.name;
+      document.getElementById('sv_' + CSS.escape(name)).textContent = '1';
+    }
+  }
+  refreshSplitView();
+}
+
+function changeShares(name, delta) {
+  const row = [...document.querySelectorAll('.share-row')].find(r => r.dataset.name === name);
+  if (!row) return;
+  let val = parseInt(row.dataset.shares || '1') + delta;
+  if (val < 1) val = 1;
+  row.dataset.shares = val;
+  row.dataset.included = '1';
+  row.classList.add('included');
+  row.querySelector('.share-toggle').textContent = '✓';
+  document.getElementById('sv_' + CSS.escape(name)).textContent = val;
+  refreshSplitView();
+}
+
+function onPctChange(name, val) {
+  const row = [...document.querySelectorAll('#percentList .share-row')].find(r => r.dataset.name === name);
+  if (!row) return;
+  let v = parseFloat(val) || 0;
+  if (v < 0) v = 0; if (v > 100) v = 100;
+  row.dataset.pct = v;
+  row.dataset.included = v > 0 ? '1' : '0';
+  v > 0 ? row.classList.add('included') : row.classList.remove('included');
+  refreshSplitView();
+}
+
+// ── Recalculate preview amounts ────────────────────────────────
+function refreshSplitView() {
+  const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+
+  if (splitMode === 'shares') {
+    const rows = document.querySelectorAll('#shareList .share-row');
+    let totalShares = 0;
+    rows.forEach(r => { if (r.dataset.included === '1') totalShares += parseInt(r.dataset.shares || 0); });
+    rows.forEach(r => {
+      const name = r.dataset.name;
+      const sh = parseInt(r.dataset.shares || 0);
+      const el = document.getElementById('sa_' + CSS.escape(name));
+      if (el) el.textContent = (r.dataset.included === '1' && totalShares > 0)
+        ? '₹' + ((sh / totalShares) * amount).toFixed(2)
+        : '—';
+    });
+    const sumEl = document.querySelector('#sharesSummary span');
+    if (sumEl) sumEl.textContent = totalShares;
+
+  } else if (splitMode === 'percent') {
+    const rows = document.querySelectorAll('#percentList .share-row');
+    let totalPct = 0;
+    rows.forEach(r => { totalPct += parseFloat(r.dataset.pct || 0); });
+    rows.forEach(r => {
+      const name = r.dataset.name;
+      const pct = parseFloat(r.dataset.pct || 0);
+      const el = document.getElementById('pa_' + CSS.escape(name));
+      if (el) el.textContent = pct > 0 ? '₹' + ((pct / 100) * amount).toFixed(2) : '—';
+    });
+    const sumEl = document.querySelector('#percentSummary span');
+    if (sumEl) {
+      sumEl.textContent = totalPct.toFixed(1) + '%';
+      sumEl.style.color = Math.abs(totalPct - 100) < 0.01 ? 'var(--gold)' : '#E74C3C';
+    }
+  }
+}
+
+// ── ADD USER ───────────────────────────────────────────────────
+document.getElementById("addUserBtn").onclick = function () {
+  let name = document.getElementById("userName").value.trim();
+  if (!name) { showToast("⚠ Enter a valid name"); return; }
+  if (users.includes(name)) { showToast("⚠ Member already added"); return; }
+
+  fetch("http://127.0.0.1:5000/add_user", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  }).catch(() => {});
+
+  users.push(name);
+
+  const empty = document.getElementById('emptyUsers');
+  if (empty) empty.remove();
+
+  // member tag
+  const tag = document.createElement('div');
+  tag.className = 'user-tag';
+  tag.innerHTML = `<span class="dot"></span>${name}`;
+  document.getElementById("userList").appendChild(tag);
+
+  // equal-split checkbox
+  const item = document.createElement('div');
+  item.className = 'split-item';
+  const uid = 'cb_' + name.replace(/\s/g, '_') + '_' + Date.now();
+  item.innerHTML = `<input type="checkbox" id="${uid}" value="${name}">
+    <label for="${uid}">${name}</label>`;
+  document.getElementById("splitUsers").appendChild(item);
+
+  // shares row
+  document.getElementById("shareList").appendChild(makeShareRow(name, 'shares'));
+
+  // percent row
+  document.getElementById("percentList").appendChild(makeShareRow(name, 'percent'));
+
+  document.getElementById("userName").value = "";
+  showToast(`✦ ${name} added`);
+  refreshSplitView();
+};
+
+document.getElementById("userName").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("addUserBtn").click();
+});
+
+// ── RESET ──────────────────────────────────────────────────────
+function resetApp() {
+  if (!confirm("Reset everything? This cannot be undone.")) return;
+  fetch("http://127.0.0.1:5000/reset", { method: "POST" })
+    .catch(() => {})
+    .finally(() => location.reload());
+}
+
+// ── SEARCHABLE "PAID BY" ───────────────────────────────────────
+document.getElementById("paidBySearch").addEventListener("input", function () {
+  let prefix = this.value.trim();
+  if (!prefix) { document.getElementById("paidByOptions").innerHTML = ""; return; }
+
+  fetch(`http://127.0.0.1:5000/search?prefix=${encodeURIComponent(prefix)}`)
+    .then(res => res.json())
+    .then(data => {
+      let div = document.getElementById("paidByOptions");
+      div.innerHTML = "";
+      if (data.length === 0) {
+        div.innerHTML = `<span style="color:var(--muted);font-size:13px;">No match</span>`;
+        return;
+      }
+      data
+        .filter(name => name.toLowerCase().startsWith(prefix.toLowerCase()))
+        .forEach(name => {
+          let tag = document.createElement("div");
+          tag.className = "user-tag";
+          tag.innerHTML = `<span class="dot"></span>${name}`;
+          tag.onclick = () => {
+            document.getElementById("paidBySearch").value = name;
+            div.innerHTML = "";
+          };
+          div.appendChild(tag);
+        });
+    })
+    .catch(() => showToast("⚠ Server error"));
+});
+
+// ── ADD EXPENSE ────────────────────────────────────────────────
+document.getElementById("addExpenseBtn").onclick = async function () {
+  const amount = parseFloat(document.getElementById("expenseAmount").value);
+  const payer  = document.getElementById("paidBySearch").value.trim();
+
+  if (!amount || amount <= 0) { showToast("⚠ Enter valid amount"); return; }
+  if (!payer || !users.includes(payer)) { showToast("⚠ Select valid payer"); return; }
+
+  const payerIdx = users.indexOf(payer);
+
+  // Build { name → amount } based on current mode
+  let splits = {};   // name → share_amount_owed
+
+  if (splitMode === 'equal') {
+    const selected = [...document.querySelectorAll("#splitUsers input:checked")];
+    if (selected.length === 0) { showToast("⚠ Select at least one person"); return; }
+    const share = amount / selected.length;
+    selected.forEach(cb => splits[cb.value] = share);
+
+  } else if (splitMode === 'shares') {
+    const rows = [...document.querySelectorAll('#shareList .share-row')].filter(r => r.dataset.included === '1');
+    if (rows.length === 0) { showToast("⚠ Include at least one person"); return; }
+    let totalShares = rows.reduce((s, r) => s + parseInt(r.dataset.shares || 0), 0);
+    if (totalShares === 0) { showToast("⚠ Shares must be > 0"); return; }
+    rows.forEach(r => {
+      splits[r.dataset.name] = (parseInt(r.dataset.shares) / totalShares) * amount;
+    });
+
+  } else if (splitMode === 'percent') {
+    const rows = [...document.querySelectorAll('#percentList .share-row')].filter(r => parseFloat(r.dataset.pct || 0) > 0);
+    if (rows.length === 0) { showToast("⚠ Assign percentages first"); return; }
+    const totalPct = rows.reduce((s, r) => s + parseFloat(r.dataset.pct), 0);
+    if (Math.abs(totalPct - 100) > 0.5) { showToast(`⚠ Percentages must sum to 100% (now ${totalPct.toFixed(1)}%)`); return; }
+    rows.forEach(r => {
+      splits[r.dataset.name] = (parseFloat(r.dataset.pct) / 100) * amount;
+    });
+  }
+
+  // Send each debtor (skip payer — they already paid)
+  const entries = Object.entries(splits).filter(([name]) => name !== payer);
+  if (entries.length === 0) { showToast("⚠ Nobody owes the payer anything"); return; }
+
+  for (const [name, owed] of entries) {
+    await fetch("http://127.0.0.1:5000/add_expense", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ debtor: users.indexOf(name), creditor: payerIdx, amount: owed })
+    }).catch(() => {});
+  }
+
+  // Mode label for toast
+  const modeLabel = splitMode === 'equal' ? 'equally'
+    : splitMode === 'shares' ? 'by shares' : 'by %';
+  showToast(`✦ ₹${amount.toFixed(2)} split ${modeLabel}`);
+
+  settleDebts();
+
+  // Reset inputs
+  document.getElementById("expenseAmount").value = "";
+  document.getElementById("paidBySearch").value = "";
+  document.getElementById("paidByOptions").innerHTML = "";
+  document.querySelectorAll("#splitUsers input:checked").forEach(cb => cb.checked = false);
+  document.querySelectorAll('#shareList .share-row').forEach(r => {
+    r.dataset.shares = '1'; r.dataset.included = '1';
+    r.classList.add('included');
+    r.querySelector('.share-toggle').textContent = '✓';
+    const name = r.dataset.name;
+    const sv = document.getElementById('sv_' + CSS.escape(name));
+    if (sv) sv.textContent = '1';
+  });
+  document.querySelectorAll('#percentList .share-row').forEach(r => {
+    r.dataset.pct = '0'; r.dataset.included = '0';
+    r.classList.remove('included');
+    const name = r.dataset.name;
+    const pv = document.getElementById('pv_' + CSS.escape(name));
+    if (pv) pv.value = 0;
+    const pa = document.getElementById('pa_' + CSS.escape(name));
+    if (pa) pa.textContent = '—';
+  });
+  refreshSplitView();
+};
+
+// ── SETTLEMENT ─────────────────────────────────────────────────
+function settleDebts() {
+  fetch("http://127.0.0.1:5000/settle")
+    .then(res => res.json())
+    .then(data => {
+      let div = document.getElementById("settlementList");
+      div.innerHTML = "";
+      if (data.length === 0) {
+        div.innerHTML = `<div class="empty-state"><div class="ei">🎉</div><div>All settled up!</div></div>`;
+        return;
+      }
+      data.forEach((t, i) => {
+        const item = document.createElement('div');
+        item.className = 'settlement-item';
+        item.style.animationDelay = `${i * 0.06}s`;
+        item.innerHTML = `
+          <div class="avatar">${initial(t.from)}</div>
+          <span class="s-name">${t.from}</span>
+          <span class="s-arrow">→</span>
+          <span class="s-name">${t.to}</span>
+          <div class="avatar">${initial(t.to)}</div>
+          <span class="s-amount">₹${t.amount.toFixed(2)}</span>`;
+        div.appendChild(item);
+      });
+    })
+    .catch(() => showToast("⚠ Could not reach server"));
+}
+</script>
+
+</body>
+</html>
